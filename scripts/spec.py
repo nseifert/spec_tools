@@ -100,15 +100,15 @@ def peakpick(data,threshold_min,threshold_max=0):
 
 
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
 
 	# Test FT via np array
 
 	#time_data = np.loadtxt('test_t.txt',usecols = (-1,))
 	#print time_data
-	ft_time_data = fft('test_t.txt', 18000.0, 26000.0, 100.0E9,usecol=-1)
+	#ft_time_data = fft('test_t.txt', 18000.0, 26000.0, 100.0E9,usecol=-1)
 
-	print peakpick(ft_time_data, 0.01)[0:100]
+	#print peakpick(ft_time_data, 0.01)[0:100]
 
 	#from matplotlib import pyplot as pp
 	#pp.plot(ft_time_data[:,0],ft_time_data[:,1])
