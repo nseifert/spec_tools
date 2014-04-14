@@ -1,11 +1,11 @@
 import numpy as np 
 import scipy.fftpack as sfft
+import scipy.interpolate as intp
 import os
 
 
 
-
-def fft(data, start_freq,end_freq,srate,freq_mult=1.0E6,usecol=-1):
+def fft(data, start_freq, end_freq, srate, freq_mult = 1.0E6, usecol=-1):
 	"""
 	fft(*args, **kwargs): 
 	Fourier transforms an input time-domain file or time-domain data array.
@@ -61,9 +61,9 @@ def fft(data, start_freq,end_freq,srate,freq_mult=1.0E6,usecol=-1):
 	return data
 
 
-def peakpick(data,threshold_min,threshold_max=0):
+def peakpick(data, threshold_min, threshold_max = 0):
 	"""
-	peakpick(data,threshold):
+	peakpick(data, threshold_min, threshold_max = 0):
 
 	Takes input Fourier transform, and returns a peakpick of all peaks within 
 	the given threshold.
@@ -98,19 +98,39 @@ def peakpick(data,threshold_min,threshold_max=0):
 	 		thres_min_check(data[i,1]) and thres_max_check(data[i,1])])
 
 
+def spline(data, resolution):
+	""" 
+	spline(data, resolution):
+
+	Splines an input Fourier transform to a given resolution 
+
+	---
+	Required arguments are:
+
+	data: Input 2-column Fourier transform, with frequency in column 0, 
+		and intensity in column 1. 
+
+	resolution: Desired splined resolution, in units of the frequency axis. 
+
+	----
+	Returns:
+
+	2-dimensional numpy array with 2 columns; 1st column is frequencies, 
+	2nd column is intensities.
+	"""
+
+	old_res = (data[-1,0]-data[0,0])/len(data)
+	scale = old_res/resolution
+	new_len = int(np.ceil(scale*len(data)))
+
+	output = np.zeros((new_len,2))
+	output[:,0] = np.arange(data[0,0],data[-1,0],resolution)
+	output[:,1] = intp.splev(output[:,0], intp.splrep(data[:,0],data[:,1],s=0),der=0)
+
+	return output
 
 
 #if __name__ == "__main__":
 
-	# Test FT via np array
-
-	#time_data = np.loadtxt('test_t.txt',usecols = (-1,))
-	#print time_data
-	#ft_time_data = fft('test_t.txt', 18000.0, 26000.0, 100.0E9,usecol=-1)
-
-	#print peakpick(ft_time_data, 0.01)[0:100]
-
 	#from matplotlib import pyplot as pp
-	#pp.plot(ft_time_data[:,0],ft_time_data[:,1])
-	#pp.show()
 
