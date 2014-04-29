@@ -2,7 +2,7 @@ import numpy as np
 import scipy.fftpack as sfft
 import scipy.interpolate as intp
 import os
-
+from helpers import *
 
 
 def fft(data, start_freq, end_freq, srate, freq_mult = 1.0E6, usecol=-1):
@@ -84,18 +84,16 @@ def peakpick(data, threshold_min, threshold_max = 0):
 	2nd column is intensities.
 	"""
 
-	max_check = lambda x,y,z: x >= y and x >= z
-	thres_min_check = lambda x: x > threshold_min
-	thres_max_check = lambda x: x < threshold_max
+	max_check = lambda x: data[x,1] >= data[x-1,1] and data[x,1] >= data[x+1,1]
+	thres_min_check = lambda x: data[x,1] > threshold_min
+	thres_max_check = lambda x: data[x,1] < threshold_max
 
 	if not threshold_max:
 		return np.array([[data[i,0],data[i,1]] for i in range(1,len(data)-1) if 
-			max_check(data[i,1], data[i-1,1], data[i+1,1]) and 
-			thres_min_check(data[i,1])])
+			max_check(i) and thres_min_check(i)])
 	else:
 	 	return np.array([[data[i,0],data[i,1]] for i in range(1,len(data)-1) if 
-	 		max_check(data[i,1], data[i-1,1], data[i+1,1]) and 
-	 		thres_min_check(data[i,1]) and thres_max_check(data[i,1])])
+	 		max_check(i) and thres_min_check(i) and thres_max_check(i)])
 
 
 def spline(data, resolution):
@@ -130,7 +128,90 @@ def spline(data, resolution):
 	return output
 
 
-#if __name__ == "__main__":
 
-	#from matplotlib import pyplot as pp
+
+def cutspec(spec,cut_list,**kwargs):
+	"""
+	cutspec(spec,cut_list,width):
+
+	Cuts a set of frequencies from an input Fourier transformed spectrum. 
+	Assumes spectrum is equally spaced across entire frequency range.
+
+	---
+	Required arguments are:
+
+	spec: Input 2-column Fourier transform, either as a filename (string)
+	or 2D ndarray
+
+	cut_list: List or 1D ndarray of frequencies to cut. 
+
+	cut_to_noise (default False): Determines if frequencies will be cut with
+	a fixed frequency window, or "smart cut" to the noise level.
+
+		if cut_to_noise is False, you must supply cutspec() with the variable
+		"width":
+
+		width (float): Specified frequency window size for transition cuts, in units
+		of the frequency axis of input FT. 
+
+		if cut_to_noise is True, you must supply cutspec() with the variable 
+		"noise_lvl":
+
+		noise_lvl: Estimated noise level in units of input FT's intensity axis.
+
+
+	-- 
+	Notes: If the user decides to use cut_to_noise, noise_lvl must be a reasonable
+	estimate of the noise level. However, cutspec() will call helper functions
+	to statistically ascertain the noise level. Using cut_to_noise is advantageous,
+	as it will dynamically allocate the frequency window to cut on a line-to-line basis.
+
+	"""
+	if 'cut_to_noise' not in kwargs:
+		cut_to_noise = False
+
+
+	if isinstance(spec,basestring):
+		try:
+			path = os.path.abspath(spec)
+		except:
+			print 'cutspec() CRITICAL ERROR:'
+			print 'Cannot find spectrum with specified path.'
+		try:
+			spec = np.loadtxt(path)
+		except: 
+			print 'Spectrum at specified path is malformed.'
+	else:
+		if not len(spec): 
+			raise Exception("Spectrum is empty.")
+
+	if not len(cut_list):
+		raise Exception("Cut List is empty.")
+
+	if cut_to_noise:
+
+		try: 
+			if not isinstance(noise_level, float):
+				raise TypeError("noise_level must be a float.")
+		except:
+			print 'cutspec() CRITICAL ERROR:'
+			print 'You did not specify the required \"noise_level\" variable to a float'  
+			return None
+
+		return __cut_to_noise(spec,cut_list,noise_level)
+
+	if not cut_to_noise:
+
+		try:
+			width = kwargs['width']		
+
+		except:
+			print 'cutspec() CRITICAL ERROR:'
+			print 'You did not specify the required "width" variable [cut_to_noise is False]'
+			return None
+
+		return __cut_fixed_width(spec,cut_list,width)
+
+
+
 
